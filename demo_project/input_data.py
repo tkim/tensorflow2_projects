@@ -105,6 +105,45 @@ class DataSet(object):
             # Finished epoch
             self._epochs_completed += 1
             # Shuffle the data
+            perm = numpy.arange(self._num_examples)
+            numpy.random.shuffle(perm)
+            self._images = self._images[perm]
+            self._labels = self._labels[perm]
+            # Start next epoch
+            start = 0
+            self._index_in_epoch = batch_size
+            assert batch_size <= self._num_examples
+        end = self._index_in_epoch
+        return self._images[start:end], self._labels[start:end]
+    
+    def read_data_sets(train_dir, fake_data=False, one_hot=False):
+        class DataSets(object):
+            pass
+        data_sets = DataSet()
+        if fake_data:
+            data_sets.train = DataSet([], [], fake_data=True)
+            data_sets.validation = DataSet([], [], fake_data=True)
+            data_sets.test = DataSet([], [], fake_data=True)
+            return data_sets
+        TRAIN_IMAGES = 'train-image-idx3-ubyte.gz'
+        TRAIN_LABELS = 'train-labels-idx1-ubyte.gz'
+        TEST_IMAGES = 't10k-images-idx3-ubyte.gz'
+        TEST_LABELS = 't10k-labels-idx1-ubyte.gz'
+        VALIDATION_SIZE = 5000
+        local_file = maybe_download(TRAIN_IMAGES, train_dir)
+        train_images = extract_images(local_file)
+        local_file = maybe_download(TRAIN_LABELS, train_dir)
+        train_labels = extract_labels(local_file, one_hot=one_hot)
+        local_file = maybe_download(TEST_IMAGES, train_dir)
+        test_images = extract_images(local_file)
+        local_file = maybe_download(TEST_LABELS, train_dir)
+        test_labels = extract_images(local_file, one_hot=one_hot)
+        validation_images = train_images[:VALIDATION_SIZE]
+        validation_labels = train_labels[:VALIDATION_SIZE]
+        data_sets.train = DataSet(train_images, train_labels)
+        data_sets.validation = DataSet(validation_images, validation_labels)
+        data_sets.test = DataSet(test_images, test_labels)
+        return data_sets
                 
 
 
